@@ -38,8 +38,13 @@ laptops' JSON files together and save the combined HTML. Use the same time windo
 - `.gitignore`: keeps generated reports out of Git.
 - `index.html`: page and script loading.
 - `style.css`: page appearance.
+<<<<<<< HEAD
 - `settings.js`: round duration, speeds, difficulty levels, colours and dimensions.
 - `game.js`: scene, difficulty menu, input, collisions, score and end-of-round behaviour.
+=======
+- `settings.js`: round duration, speeds, colours and dimensions.
+- `game.js`: scene, input, collisions, score, high score (saved in localStorage) and end-of-round behaviour.
+>>>>>>> feature-highscore
 - `vendor/phaser-3.90.0.min.js`: the pinned Phaser runtime, byte for byte the file published at
   `https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js`; `vendor/LICENSE.phaser.txt` is its MIT licence.
 

@@ -1,4 +1,22 @@
 /* global Phaser, COIN_DASH */
+const HIGH_SCORE_KEY = 'coinDash.highScore';
+
+// localStorage can be missing or throw (private mode, blocked storage), so fall back quietly.
+function loadHighScore() {
+  try {
+    const value = parseInt(window.localStorage.getItem(HIGH_SCORE_KEY), 10);
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function saveHighScore(value) {
+  try {
+    window.localStorage.setItem(HIGH_SCORE_KEY, String(value));
+  } catch (e) { /* storage unavailable; the high score just won't persist */ }
+}
+
 class CoinDash extends Phaser.Scene {
   constructor() { super('CoinDash'); }
 
@@ -6,6 +24,8 @@ class CoinDash extends Phaser.Scene {
     const c = COIN_DASH;
     this.score = 0;
     this.started = false;
+    this.highScore = loadHighScore();
+    this.newHighScore = false;
     this.finished = false;
     this.paused = false;
     this.physics.world.setBounds(0, 44, c.width, c.height - 44);
@@ -30,6 +50,8 @@ class CoinDash extends Phaser.Scene {
       this.score++;
       if (this.score >= this.difficulty.targetScore) this.finish('Target reached!');
       else this.placeCoin();
+      this.recordHighScore();
+      this.placeCoin();
     });
     this.physics.add.overlap(this.player, this.drones, () => this.finish('A drone caught you!'));
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -120,6 +142,14 @@ class CoinDash extends Phaser.Scene {
     this.coin.body.reset(x, y);
   }
 
+  // Save as soon as the record is beaten so a reload mid-round doesn't lose it.
+  recordHighScore() {
+    if (this.score <= this.highScore) return;
+    this.highScore = this.score;
+    this.newHighScore = true;
+    saveHighScore(this.highScore);
+  }
+
   update() {
     if (!this.started || this.finished || this.paused) return;
     const dx = Number(this.cursors.right.isDown || this.keys.D.isDown)
@@ -131,6 +161,7 @@ class CoinDash extends Phaser.Scene {
     const seconds = Math.max(0, Math.ceil((this.deadline - this.time.now) / 1000));
     const { label, targetScore } = this.difficulty;
     this.hud.setText(`Coins: ${this.score}/${targetScore}        ${label}        Time: ${seconds}s`);
+    this.hud.setText(`Coins: ${this.score}   High Score: ${this.highScore}          Time: ${seconds}s`);
     if (seconds === 0) this.finish('Time is up!');
   }
 
@@ -139,9 +170,11 @@ class CoinDash extends Phaser.Scene {
     this.finished = true;
     this.physics.pause();
     const c = COIN_DASH;
-    this.add.rectangle(c.width / 2, c.height / 2, 460, 150, 0x0a1120, 0.95);
+    const best = this.newHighScore ? 'New high score!' : `High score: ${this.highScore}`;
+    this.add.rectangle(c.width / 2, c.height / 2, 460, 190, 0x0a1120, 0.95);
     this.add.text(c.width / 2, c.height / 2,
       `${reason}\n${this.score}/${this.difficulty.targetScore} coins on ${this.difficulty.label}\nPress R to play again`,
+      `${reason}\n${this.score} coins collected\n${best}\nPress R to try again`,
       { font: '24px monospace', color: '#ffffff', align: 'center', lineSpacing: 12 }
     ).setOrigin(0.5);
   }
